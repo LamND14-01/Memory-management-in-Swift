@@ -104,9 +104,7 @@ How can you fix retain cycle?
 
 **Weak Reference**: Nó không làm tăng số lượng tham chiếu. weak reference luốn được khai vào là **optional type**.
 
-**Unowned References**: giống với weak reference. Nó sẽ không làm tăng retain count khi được tham chiếu tới. Sự khác biệt chính là nó không phải là **optional type**. Nếu truy cập đến unowned property của 1 object đã deinit. Sẽ xảy ra lỗi runtime khi bạn cố force unwarp nil optional type
-
-It is same as weak references. It will not increase the retain count when object is referred. The main difference is, it never optional types. If you try to access an unowned property that refers to a deinitialized object, you'll trigger a runtime error comparable to force unwrapping a `nil` optional type.
+**Unowned References**: giống với weak reference. Nó sẽ không làm tăng retain count khi được tham chiếu tới. Sự khác biệt chính là nó không phải là **optional type**. Nếu truy cập đến unowned property của 1 object đã deinit. Sẽ xảy ra lỗi runtime khi bạn cố force unwarp nil optional type.
 
 ![](pictures/8.png)
 
@@ -123,57 +121,54 @@ Trong ví dụ trên, bạn có thể giải quyết strong reference bằng cá
 Strong Reference Cycle in Closures:
 -----------------------------------
 
-Khi bạn sử dụng closures trong 1 instance class, chúng có thể captrue **self**
-When you use closures within a class instance they could potentially capture self. If self, in turn, retains that closure, you'd have a mutual strong reference cycle between closure and class instance.
+Khi bạn sử dụng closures trong 1 instance class, chúng có khả năng ghi lại **self**. Từ đó sẽ có 1 tác động qua lại của strong reference giữa closure và class instance.
 
-To avoid it, you'd use the same keywords weak and unowned in closure capture list.
+Đế tránh việc đó, ta cũng sẽ sử dụng `weak` or `unowned`.
 
 ![](pictures/13.png)
 
 ![](pictures/14.png)
 
-> To know more about closure and capture list please click [here](https://manasaprema04.medium.com/closures-f645d92fc524)
-
-How can we identify memory leaks?
+<h2>Cách xác định memory leaks?</h2>
 =================================
 
-Xcode has a built in *memory graph debugger*. It allows you to see how many reference counts you have on an object and which objects currently exist.
+Xcode có tích hợp *memory graph debugger*. Nó giúp check được có bao nhiêu reference counts trong object và object nào đang tồn tại.
 
-Heaps and Stacks
+<h2>Heaps and Stacks</h2>
 ----------------
 
-Swift automatically allocates memory in either the heap or the stack.
+Swift tự động phân bổ bộ nhớ trong heap or stack.
 
 Stack:
 ------
 
--   Static in memory and allocation happens only during compile time.
--   stack is LIFO(Last in first out) data structure
--   very fast access
--   When a function is called, all local instances in that function will be pushed on to the current stack. And once the function has returned, all instances will have been removed from the stack.
--   Data stored in the stack is only there temporarily until the function exits and causes all memory on the stack to be automatically deallocated.
--   Each "scope" in your app (like the inner contents of a method) will provide the amount of memory it needs.
--   stack is not used with objects that change in size.
--   Each thread has its own stack
--   Stacks store value types, such as structs and enums.
--   If the size of your value type can be determined during compile time, or if your value type doesn't recursively contains / is not contained by a reference type, then it will require stack allocation.
--   Value type doesn't increases retain count. But If your value type contains inner references, copying it will require increasing the reference count of it's children instead.
+-   **Static** trong bộ nhớ và phân bổ chỉ xảy ra trong **compile time**.
+-   stack là cấu trúc dữ liệu LIFO(Last in first out).
+-   truy cập nhanh
+-   Khi 1 function được gọi, tất cả các instance của function sẽ được đẩy vào stack hiện tại. Và một khi function được return, tất cả các instance sẽ được xóa khỏi stack.
+-   Dữ liệu được lưu trữ trong stack chỉ là tạm thời cho đến khi hàm thực thi xong và khiến cho bộ nhớ trong stack được tự động giải phóng.
+-   Mỗi scope trong ứng dụng (như nội dung trong method) sẽ được cung cấp bộ nhớ cần thiết.
+-   stack không được sử dụng với các object thay đổi kích thước bộ nhớ.
+-   Mỗi thread đều có ngăn xếp riêng.
+-   Stacks struct lưu giữ value type ví dụ như struct và enum.
+-   Nếu kích thước của value type của bạn có thể dược xác đinh trong compile time, or hoặc value type không chứa đệ quy hoặc không chứa bởi reference type, nó sẽ cần 1 stack allocation.
+-   Value type không làm tăng retain count. nhưng nếu value type chứa reference type bên trong, bản copy của nó sẽ làm tăng reference count của nó.
 
 Heap:
 -----
 
--   Dynamic in memory and allocation happens during runtime.
--   Values can be referenced at any time through a memory address.
--   no limit on memory size
--   slower access
--   When the process requests a certain amount of memory, the heap will search for a memory address that fulfils this request and return it to the process.
--   When the memory is not being used anymore, the process must tell the heap to free that section of memory.
--   It requires thread safety.
--   heap is shared with everybody
--   If the size of your value type cannot be determined during compile time (because of a protocol/generic requirement), or if your value type recursively contains / is contained by a reference type (remember that closures are also reference types), then it will require heap allocation.
--   class is stored in heap memory.
+-   **Dynamic** trong bộ nhớ và phân bổ xảy ra trong **runtime**.
+-   Value có thể tham chiếu bất cứ lúc nào thông qua địa chỉ bộ nhớ.
+-   không giới hạn size bộ nhớ.
+-   truy cập chậm.
+-   Khi process yêu cầu một bộ nhớ nhất định, heap sẽ tìm kiếm địa chỉ bộ nhớ đáp ứng yêu cầu và trả về cho nó.
+-   Khi bộ nhớ không còn được sử dụng nữa, process phải báo lại với heap về bộ nhớ trống đó.
+-   Yêu cầu thread safety.
+-   heap được chia sẻ với tất cả.
+-   Nếu size của value type không thể xác định trong compile tim (do protocol/generic requirement), hoặc value type chứa đệ quy / chứa một reference type (lưu ý là closure cũng là 1 reference types), nó sẽ cần 1 heap allocation.
+-   class được lưu trữ trong heap memory.
 
-> Heap Allocation is slower than Stack Allocation not just because of the more complex data structure --- it also requires thread safety. Each thread has its own stack, but the heap is shared with everybody, demanding synchronization.
+> Heap Allocation chậm hơn Stack Allocation không chỉ vì cấu trúc dữ liệu phức tạp hơn --- nó còn bởi vì thread safety. Mỗi thread đều có 1 stack riêng nhưng heap được chia sẽ cho tất cả vì vậy nó yêu cầu đồng bộ hóa.
 
 Interview tricky questions?
 ---------------------------
@@ -197,8 +192,3 @@ As per ARC: When the view controller is deallocated, the view it manages is deal
 The view heirarchy already has a strong reference. so assigning weak to IBoutlets might help to avoid reference cycles when your dismissing the view controller.
 
 As of 2015, recommended best practice from Apple was for IBOutlets to be strong unless weak is specifically needed to avoid a retain cycle.
-
-Thank you for reading
-=====================
-
-This is my first article on Memory Management, I hope it will be useful for you. If you enjoyed it, feel free to hit the clap button below 👏 to help others find it! and follow me on [Medium](https://medium.com/@manasaprema04).
